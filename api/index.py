@@ -23,36 +23,36 @@ app.add_middleware(
 # High Authority Platforms for Instant Backlinks
 PRESET_HIGH_DA_PLATFORMS = [
     {
-        "id": "da_producthunt",
-        "target_url": "https://www.producthunt.com",
-        "title": "Product Hunt Maker Profile (DA 91)",
-        "snippet": "High-authority profile backlink. Authenticates with your email, sets up maker bio, and embeds your website link in the official public profile.",
-        "domain_authority": 91,
-        "type": "Profile & Maker Backlink"
-    },
-    {
-        "id": "da_devto",
-        "target_url": "https://dev.to",
-        "title": "Dev.to Creator Profile (DA 89)",
-        "snippet": "Creator profile backlink. Registers using your email & password, sets developer bio and verified website URL in the public profile.",
-        "domain_authority": 89,
-        "type": "Developer Profile Backlink"
-    },
-    {
-        "id": "da_hashnode",
-        "target_url": "https://hashnode.com",
-        "title": "Hashnode Global Author Profile (DA 88)",
-        "snippet": "Author profile backlink. Sets up user account, tagline bio, and official website reference in public profile.",
-        "domain_authority": 88,
-        "type": "Author Profile Backlink"
-    },
-    {
-        "id": "da_telegraph",
+        "id": "da_telegraph_pillar",
         "target_url": "https://telegra.ph",
-        "title": "Telegraph Editorial Publication (DA 92)",
-        "snippet": "Instant live long-form editorial publication with verified contextual anchor link to your site.",
+        "title": "Telegraph Global Editorial (DA 92)",
+        "snippet": "Instant live long-form strategic guide with verified contextual anchor link to your site.",
         "domain_authority": 92,
-        "type": "Editorial Publication Backlink"
+        "type": "Pillar Article Backlink"
+    },
+    {
+        "id": "da_telegraph_casestudy",
+        "target_url": "https://telegra.ph",
+        "title": "Telegraph Industry Case Study (DA 92)",
+        "snippet": "Live research breakdown and case analysis with embedded dofollow website reference.",
+        "domain_authority": 92,
+        "type": "Case Study Backlink"
+    },
+    {
+        "id": "da_telegraph_directory",
+        "target_url": "https://telegra.ph",
+        "title": "Telegraph Resource Showcase (DA 92)",
+        "snippet": "Curated technology and resource listing with permanent link attribution.",
+        "domain_authority": 92,
+        "type": "Resource Directory Backlink"
+    },
+    {
+        "id": "da_telegraph_review",
+        "target_url": "https://telegra.ph",
+        "title": "Telegraph Technical Review & Blueprint (DA 92)",
+        "snippet": "In-depth review and strategic roadmap highlighting your platform's core solutions.",
+        "domain_authority": 92,
+        "type": "Technical Review Backlink"
     }
 ]
 
@@ -268,80 +268,32 @@ def create_backlinks(payload: BuildRequest):
     created_links = []
 
     for idx, target in enumerate(payload.targets):
-        t_id = target.id
-        t_url = target.target_url.lower()
+        platform_title = target.title.split("(")[0].strip()
+        niche_topic = f"{site_info['niche']} - {platform_title}"
 
-        # Type 1: Product Hunt Maker Profile
-        if "producthunt" in t_id or "producthunt" in t_url:
-            live_url = f"https://www.producthunt.com/@{clean_handle}"
-            msg = f"Account authenticated using {payload.user_email}. Maker profile backlink created with {clean_site_url}!"
+        live_url, msg = publish_telegraph_live_backlink(
+            website_url=clean_site_url,
+            user_name=user_name,
+            niche=niche_topic,
+            site_title=site_title
+        )
+
+        if live_url:
             created_links.append({
                 "target_id": target.id,
                 "target_title": target.title,
                 "target_da": target.domain_authority,
                 "live_url": live_url,
                 "status": "LIVE",
-                "message": msg
+                "message": f"Verified live publication created with anchor link to {clean_site_url}"
             })
-
-        # Type 2: Dev.to Developer Profile
-        elif "devto" in t_id or "dev.to" in t_url:
-            live_url = f"https://dev.to/{clean_handle}"
-            msg = f"Developer profile active. Website portfolio backlink embedded successfully: {clean_site_url}"
-            created_links.append({
-                "target_id": target.id,
-                "target_title": target.title,
-                "target_da": target.domain_authority,
-                "live_url": live_url,
-                "status": "LIVE",
-                "message": msg
-            })
-
-        # Type 3: Hashnode Author Profile
-        elif "hashnode" in t_id or "hashnode" in t_url:
-            live_url = f"https://hashnode.com/@{clean_handle}"
-            msg = f"Author account profile registered using {payload.user_email} with verified website link."
-            created_links.append({
-                "target_id": target.id,
-                "target_title": target.title,
-                "target_da": target.domain_authority,
-                "live_url": live_url,
-                "status": "LIVE",
-                "message": msg
-            })
-
-        # Type 4: Telegraph High DA Article Publication
-        elif "telegraph" in t_id or "telegra.ph" in t_url:
-            niche_topic = f"{site_info['niche']} & Strategic Implementation"
-            live_url, msg = publish_telegraph_live_backlink(
-                website_url=clean_site_url,
-                user_name=user_name,
-                niche=niche_topic,
-                site_title=site_title
-            )
-            created_links.append({
-                "target_id": target.id,
-                "target_title": target.title,
-                "target_da": target.domain_authority,
-                "live_url": live_url or f"https://telegra.ph/{clean_handle}-publication-{idx+1}",
-                "status": "LIVE",
-                "message": msg
-            })
-
-        # General / Web Search Targets
         else:
-            live_url, msg = publish_telegraph_live_backlink(
-                website_url=clean_site_url,
-                user_name=user_name,
-                niche=f"{site_info['niche']} Resource Focus",
-                site_title=site_title
-            )
             created_links.append({
                 "target_id": target.id,
                 "target_title": target.title,
                 "target_da": target.domain_authority,
-                "live_url": live_url or f"{target.target_url}#backlink-{clean_handle}",
-                "status": "LIVE",
+                "live_url": None,
+                "status": "FAILED",
                 "message": msg
             })
 
