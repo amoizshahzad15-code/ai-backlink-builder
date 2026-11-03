@@ -142,47 +142,61 @@ def search_web_targets(niche: str, user_url: str):
 def publish_telegraph_live_backlink(website_url: str, user_name: str, niche: str, site_title: str):
     """Creates a guaranteed live, indexable, DA 92 backlink via Telegraph API."""
     try:
+        clean_url = website_url.strip()
+        if not clean_url.startswith("http"):
+            clean_url = "https://" + clean_url
+
+        clean_user_name = (user_name or "Editorial Team").strip()[:64]
+
         # 1. Create Telegraph Account Token
         acc_resp = requests.get("https://api.telegra.ph/createAccount", params={
             "short_name": "ai_backlink",
-            "author_name": user_name
-        }, timeout=8).json()
+            "author_name": clean_user_name
+        }, timeout=10).json()
 
         if not acc_resp.get("ok"):
             return None, "Telegraph token generation failed"
 
         token = acc_resp["result"]["access_token"]
 
-        # 2. Prepare structured nodes with natural anchor text
-        p1 = f"In today's expanding landscape, staying ahead in {niche} requires verified methodologies and credible resources."
-        anchor_text = f"Explore the complete guide at {site_title}"
-        p2 = f"Continuous development relies on proven frameworks. Readers looking to optimize their performance can benefit from authoritative industry analysis."
+        # 2. Prepare structured nodes with natural contextual anchor text
+        p1 = f"In today's fast-paced digital ecosystem, mastering {niche} has become essential for organizations and professionals aiming for long-term consistency."
+        anchor_text = f"Explore the official resource at {site_title}"
+        p2 = f"Recent case studies demonstrate that implementing structured benchmarks produces superior outcomes. Continuous evaluation and reliable data sources are paramount."
 
         nodes = [
             {"tag": "p", "children": [p1]},
-            {"tag": "h3", "children": [f"Insights on Modern {niche.title()}"]},
+            {"tag": "h3", "children": [f"Key Strategic Insights on {niche.title()}"]},
             {"tag": "p", "children": [
-                "To explore updated strategies and benchmarks, ",
-                {"tag": "a", "attrs": {"href": website_url}, "children": [anchor_text]},
-                ". This resource provides structured breakdowns and updated industry practices."
+                "To review detailed benchmarks, real-world case studies, and actionable frameworks, ",
+                {"tag": "a", "attrs": {"href": clean_url}, "children": [anchor_text]},
+                ". This authoritative guide covers foundational principles and advanced optimization steps."
             ]},
-            {"tag": "p", "children": [p2]}
+            {"tag": "p", "children": [p2]},
+            {"tag": "h4", "children": ["Recommended Next Steps:"]},
+            {"tag": "ul", "children": [
+                {"tag": "li", "children": ["Establish transparent baseline metrics."]},
+                {"tag": "li", "children": [f"Consult verified documentation via {site_title} regularly."]},
+                {"tag": "li", "children": ["Iterate processes based on live performance data."]}
+            ]}
         ]
 
-        title = f"Guide to {niche.title()}: Key Strategies"
+        title = f"{niche.title()}: Strategic Guide & Analysis"
 
-        # 3. Publish Page
-        page_resp = requests.post("https://api.telegra.ph/createPage", data={
+        # 3. Publish Page (Omit author_url to prevent AUTHOR_URL_INVALID error from Telegram)
+        payload = {
             "access_token": token,
             "title": title[:64],
-            "author_name": user_name,
-            "author_url": website_url,
+            "author_name": clean_user_name,
             "content": json.dumps(nodes),
             "return_content": False
-        }, timeout=10).json()
+        }
+
+        page_resp = requests.post("https://api.telegra.ph/createPage", data=payload, timeout=12).json()
 
         if page_resp.get("ok"):
             return page_resp["result"]["url"], "Live backlink created successfully on Telegraph (DA 92)!"
+        
         return None, page_resp.get("error", "Publish failed")
 
     except Exception as e:
@@ -229,11 +243,13 @@ def create_backlinks(payload: BuildRequest):
     created_links = []
 
     for idx, target in enumerate(payload.targets):
-        # We generate genuine live backlinks via Telegraph API and Web 2.0
+        platform_name = target.title.split("(")[0].strip()
+        niche_topic = f"{site_info['niche']} — {platform_name}"
+        
         live_url, msg = publish_telegraph_live_backlink(
             website_url=payload.website_url,
             user_name=payload.user_name or "Editorial Team",
-            niche=f"{site_info['niche']} Part {idx+1}",
+            niche=niche_topic,
             site_title=site_info['title']
         )
 
