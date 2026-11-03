@@ -72,6 +72,7 @@ class BuildRequest(BaseModel):
     website_url: str
     user_name: Optional[str] = "Webmaster"
     user_email: Optional[str] = "contact@domain.com"
+    user_password: Optional[str] = ""
     targets: List[TargetItem]
 
 
